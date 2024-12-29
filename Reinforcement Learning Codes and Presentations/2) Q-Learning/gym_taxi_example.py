@@ -1,132 +1,92 @@
 import gym
+import time
 
-env = gym.make("Taxi-v2").env
+# Create and initialize the environment
+env = gym.make("Taxi-v3", render_mode="ansi")
+initial_state = env.reset()
 
-env.render() # show
+# Now we can render safely
+env.render()
+
+# Print environment information
+print("State space:", env.observation_space)  # 500 possible states
+print("Action space:", env.action_space)      # 6 possible actions
 
 """
-blue = passenger
-purple = destination
-yellow/red = empty taxi
-green = full taxi
-RGBY = location for destination and passanger
+Environment details:
+- Blue: passenger location
+- Purple: destination
+- Yellow/Red: empty taxi
+- Green: full taxi
+- RGBY: possible locations for pickup/dropoff
 """
 
-env.reset() # reset env and return  random initial state
-
-# %% 
-
-print("State space: ",env.observation_space) # 500
-print("Action space: ", env.action_space) # 6
-
-# taxi row, taxi column, passenger index, destination
-state = env.encode(3,1,2,3)
-print("State number: ",state)
+# Demonstrate state encoding
+taxi_row, taxi_col = 3, 1
+passenger_loc = 2    # Index of passenger location
+destination = 3      # Index of destination
+state = env.encode(taxi_row, taxi_col, passenger_loc, destination)
+print(f"Encoded state: {state}")
 
 env.s = state
 env.render()
 
-# %%
 """
-Actions: 
-    There are 6 discrete deterministic actions:
-    - 0: move south
-    - 1: move north
-    - 2: move east 
-    - 3: move west 
-    - 4: pickup passenger
-    - 5: dropoff passenger
+Available Actions:
+0: move south
+1: move north
+2: move east 
+3: move west 
+4: pickup passenger
+5: dropoff passenger
 """
-# probability, next_state, 
-env.P[331]
 
-# %%
-
+# Run episodes
 total_reward_list = []
-# episode
-for j in range(5):
-    env.reset()
-    time_step = 0
+num_episodes = 5
+
+for episode in range(num_episodes):
+    state = env.reset()
     total_reward = 0
     list_visualize = []
-    while True:
+    done = False
+    timestep = 0
+    
+    while not done:
+        timestep += 1
         
-        time_step += 1
-        
-        # choose action
+        # Choose random action
         action = env.action_space.sample()
         
-        # perform action and get reward
-        state, reward, done, _ =  env.step(action) # state = next state
+        # Take action - note we're now handling 5 return values
+        next_state, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated  # Combine both termination conditions
         
-        # total reward
+        # Accumulate reward
         total_reward += reward
-    
-        # visualize
-        list_visualize.append({"frame": env,
-                               "state": state, "action": action, "reward":reward,
-                               "Total Reward": total_reward})
         
-        # env.render()
+        # Store frame information
+        list_visualize.append({
+            "frame": env.render(),
+            "state": next_state,
+            "action": action,
+            "reward": reward,
+            "total_reward": total_reward
+        })
         
-        if done:
-            total_reward_list.append(total_reward)
-            break
- 
-# %%
-import time       
+        state = next_state
+        
+    total_reward_list.append(total_reward)
+    print(f"Episode {episode + 1} completed with total reward: {total_reward}")
+
+# Visualize episodes
 for i, frame in enumerate(list_visualize):
-    print(frame["frame"].render())
-    print("Timestep: ", i + 1)
-    print("State: ", frame["state"])
-    print("action: ", frame["action"])
-    print("reward: ", frame["reward"])
-    print("Total Reward: ", frame["Total Reward"])
-    # time.sleep(2)
+    print("\nTimestep:", i + 1)
+    print(frame["frame"])
+    print("State:", frame["state"])
+    print("Action:", frame["action"])
+    print("Reward:", frame["reward"])
+    print("Total Reward:", frame["total_reward"])
+    time.sleep(0.5)
 
-
-    
-
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print("\nRewards across episodes:", total_reward_list)
